@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kokoalive</title>
+</head>
+
+<body>
+    <video autoplay playsinline id="video" width="640" height="480"></video>
+    <script>
+        var localVideo = null;
+
+        function gotLocalMediaStream(mediaStream) {
+            localVideo.srcObject = mediaStream;
+        }
+
+        function handleLocalMediaStreamError(error) {
+            console.log("navigator.getUserMedia error: ", error);
+        }
+
+
+        window.onload = () => {
+            var mediaStreamConstraints = { video: true };
+            localVideo = document.querySelector("video");
+            navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints).then(gotLocalMediaStream).catch(handleLocalMediaStreamError);
+        }
+    </script>
+</body>
+
+</html>
