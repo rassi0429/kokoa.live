@@ -15,6 +15,41 @@
 
         function gotLocalMediaStream(mediaStream) {
             localVideo.srcObject = mediaStream;
+
+            const config = {
+                offerToReceiveAudio: 1,
+                offerToReceiveVideo: 1,
+                iceServers: [{
+                    urls: "stun:stun.l.google.com:19302",
+                    username: "kokoa0429",
+                    credential: "turnpassword"
+                }]
+            }
+            const connection = new RTCPeerConnection(config)
+            connection.createOffer().then(async offerSDP => {
+                connection.setLocalDescription(offerSDP)
+                // 作成したSDPはReceiver側に渡す必要があるので this.offer 変数に代入
+                const offer = offerSDP
+                const postoption = {
+                    "ingestionAddress": "rtmp://live.kokoa.dev/live",
+                    "streamKey": "12345",
+                    "offer": JSON.stringify(offerSDP)
+                }
+                const response = await fetch("http://localhost:8090/webrtc/offer", {
+                    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    redirect: 'follow', // manual, *follow, error
+                    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+                    body: JSON.stringify(postoption) // 本文のデータ型は "Content-Type" ヘッダーと一致させる必要があります
+                })
+                const res = await response.json()
+                await connection.setRemoteDescription(res)
+                console.log("OK")
+                mediaStream.getTracks().forEach(track => connection.addTrack(track, mediaStream));
+                console.log(mediaStream.getTracks())
+            })
         }
 
         function handleLocalMediaStreamError(error) {

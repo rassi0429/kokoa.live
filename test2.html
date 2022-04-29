@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WebRTC Video Chat</title>
+    <style>
+        *,
+        ::before,
+        ::after {
+            box-sizing: border-box;
+            font-family: sans-serif;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            /* for iOS */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            line-height: 1;
+            overflow: hidden;
+        }
+
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            width: 100%;
+            z-index: 10000;
+        }
+
+        header>span:last-child {
+            text-align: right;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: .5rem;
+            align-items: center;
+            justify-items: center;
+            height: 100%;
+        }
+
+        video {
+            max-width: 100%;
+            max-height: 100vh;
+            background: #eee;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 10000;
+        }
+    </style>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // const socket = window.io();
+            let rtcPeerConnection;
+            let remoteStream;  // 2人目の相手の接続を受け取らないようにするため、1人目の接続で受け取った Stream を保持しておく
+
+            // socket
+            //     .on('connect', () => {
+            //         // 画面初期表示時にサーバと接続する
+            //         console.log('on connect');
+            //     })
+            //     .on('message', async (event) => {
+            //         // 別の人が Start するとココに入ってくる
+            //         let parsedEvent;
+            //         try {
+            //             parsedEvent = JSON.parse(event);
+            //         }
+            //         catch (error) {
+            //             return console.warn('on message : Failed To Parse', error);
+            //         }
+
+            //         if (!rtcPeerConnection) {
+            //             return console.log('on message : RTCPeerConnection Is Not Yet Created', parsedEvent);
+            //         }
+
+            //         // トップレベルプロパティは sdp か candidate のみ
+            //         try {
+            //             if (parsedEvent.sdp) {
+            //                 // FIXME : 2人目の相手が接続してくると Failed to set remote answer sdp: Called in wrong state: kStable が発生する (type: 'answer' 時)
+            //                 //         それを回避するための暫定策として、1人目と接続している最中は2人目以降の相手の接続を無視することにする
+            //                 if (remoteStream) {
+            //                     return console.log('  on message : Remote Stream Is Already Added, Ignore');
+            //                 }
+
+            //                 // sdp プロパティ配下は type: 'offer' or 'answer' と sdp プロパティ
+            //                 await rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(parsedEvent.sdp));
+            //                 // FIXME : iOS Safari が後から来た接続を受け取った時 (type: 'offer') に以下のエラーが出る
+            //                 //         InvalidStateError: description type incompatible with current signaling state
+            //                 //         iOS Safari が後から接続すれば正常に接続できる。回避策が分からない
+
+            //                 if (parsedEvent.sdp.type === 'offer') {
+            //                     console.log('on message : SDP Offer', parsedEvent);
+
+            //                     // type: 'answer' 時に createAnswer() すると以下のエラーが出るので type: 'offer' のみにする
+            //                     // Failed to execute 'createAnswer' on 'RTCPeerConnection': PeerConnection cannot create an answer in a state other than have-remote-offer or have-local-pranswer.
+            //                     const answer = await rtcPeerConnection.createAnswer();
+
+            //                     await rtcPeerConnection.setLocalDescription(answer);
+            //                     // Socket を経由して Answer SDP を送る (送る内容は Offer SDP と同じ)
+            //                     socket.emit('message', JSON.stringify({ sdp: rtcPeerConnection.localDescription }));
+            //                 }
+            //                 else {
+            //                     console.log('on message : SDP Answer (Do Nothing)', parsedEvent);
+            //                 }
+            //             }
+            //             else if (parsedEvent.candidate) {
+            //                 // candidate プロパティ配下は candidate・sdpMid・sdpMLineIndex プロパティ
+            //                 console.log('on message : Candidate', parsedEvent);
+            //                 rtcPeerConnection.addIceCandidate(new RTCIceCandidate(parsedEvent.candidate));
+            //             }
+            //             else {
+            //                 console.log('on message : Other (Do Nothing)', parsedEvent);  // 基本ない
+            //             }
+            //         }
+            //         catch (error) {
+            //             console.warn('on message : Unexpected Error', error, parsedEvent);  // 基本ない
+            //         }
+            //     });
+
+            // ビデオを起動し Local Stream を送信する
+            document.getElementById('start-button').addEventListener('click', async () => {
+                try {
+                    const localStream = await getUserMedia();
+                    createRtcPeerConnection(localStream);
+                    const sessionDescription = await rtcPeerConnection.createOffer();
+                    await rtcPeerConnection.setLocalDescription(sessionDescription);
+                    // Socket を経由して Offer SDP を送る
+                    const postoption = {
+                        "ingestionAddress": "rtmp://live.kokoa.dev/live",
+                        "streamKey": "12345",
+                        "offer": JSON.stringify(sessionDescription)
+                    }
+                    const response = await fetch("http://localhost:8090/webrtc/offer", {
+                        method: 'POST', // *GET, POST, PUT, DELETE, etc.
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(postoption) // 本文のデータ型は "Content-Type" ヘッダーと一致させる必要があります
+                    })
+                    console.log(await response.json())
+                    await rtcPeerConnection.setRemoteDescription(await response.json());
+
+                    // socket.emit('message', JSON.stringify({ sdp: rtcPeerConnection.localDescription }));
+                    document.getElementById('start-button').disabled = true;
+                    document.getElementById('stop-button').disabled = false;
+                    document.getElementById('start-button').style.display = 'none';
+                    document.getElementById('stop-button').style.display = 'inline';
+                }
+                catch (error) {
+                    console.warn('Failed To Start', error);
+                }
+            });
+
+            // ビデオを停止する
+            document.getElementById('stop-button').addEventListener('click', () => {
+                try {
+                    if (document.getElementById('local-video').srcObject) {
+                        document.getElementById('local-video').srcObject.getTracks().forEach((track) => { track.stop(); });
+                        document.getElementById('local-video').srcObject = null;
+                    }
+                    if (rtcPeerConnection) {
+                        rtcPeerConnection.close();
+                        rtcPeerConnection = null;
+                    }
+                    if (document.getElementById('remote-video').srcObject) {
+                        try {
+                            document.getElementById('remote-video').srcObject.getTracks().forEach((track) => { track.stop(); });
+                            document.getElementById('remote-video').srcObject = null;
+                        }
+                        catch (error) {
+                            console.warn('Failed To Stop Remote Video', error);
+                        }
+                    }
+                    remoteStream = null;
+                    document.getElementById('start-button').disabled = false;
+                    document.getElementById('stop-button').disabled = true;
+                    document.getElementById('start-button').style.display = 'inline';
+                    document.getElementById('stop-button').style.display = 'none';
+                }
+                catch (error) {
+                    console.warn('Failed To Stop Video (Unexpected Error)', error);
+                }
+            });
+
+            /** ビデオを開始する・例外ハンドリングは呼び出し元の #start-button のクリックイベントで行う */
+            async function getUserMedia() {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                document.getElementById('local-video').srcObject = stream;
+                document.getElementById('local-video').play();
+                return stream;
+            }
+
+            /** getUserMedia() で取得した Stream をセットした RTCPeerConnection を作成する・例外ハンドリングは呼び出し元の #start-button のクリックイベントで行う */
+            function createRtcPeerConnection(localStream) {
+                if (rtcPeerConnection) {
+                    return;
+                }
+
+                // iOS Safari の場合 Member RTCIceServer.urls is required and must be an instance of (DOMString or sequence) エラーが出るので
+                // url ではなく urls を使う : https://github.com/shiguredo/momo/pull/48
+                rtcPeerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+                // rtcPeerConnection.onicecandidate = onicecandidate;
+
+                // Chrome などは RTCPeerConnection.addStream(localStream) が動作するが iOS Safari は動作しないので addTrack() を使う
+                // iOS Safari : https://stackoverflow.com/questions/57106846/uncaught-typeerror-peerconnection-addstream-is-not-a-function/57108963
+                localStream.getTracks().forEach((track) => {
+                    rtcPeerConnection.addTrack(track, localStream);
+                });
+
+                // iOS Safari では onaddstream が動作しないので ontrack を使用する (Chrome なども ontrack に対応)
+                rtcPeerConnection.ontrack = ontrack;
+
+                // onremovestream は相手の接続が切れたり再接続されたりした時に発火するが、onaddstream (ontrack) 後に onremovestream が動作して
+                // おかしくなることが多いので何もしないことにする (removetrack も定義しない)
+            }
+
+            /** ICE Candidate を送る */
+            // function onicecandidate(event) {
+            //     if (event.candidate) {
+            //         console.log('onicecandidate : socket.emit()', event);
+            //         // socket.emit('message', JSON.stringify({ candidate: event.candidate }));
+            //     }
+            //     else {
+            //         console.log('onicecandidate : End', event);
+            //     }
+            // }
+
+            /** 相手の接続を受け取ったらリモート映像として表示する */
+            function ontrack(event) {
+                console.log('ontrack', event);
+                if (remoteStream) {
+                    return console.log('  ontrack : Remote Stream Is Already Added, Ignore');  // on message で弾いているので実際はチェックしなくても大丈夫
+                }
+
+                try {
+                    document.getElementById('remote-video').srcObject = remoteStream = event.streams[0];
+                    document.getElementById('remote-video').play();
+                }
+                catch (error) {
+                    // Windows Chrome だと play() can only be initialized by a user gesture. エラーが発生して再生できない場合がある
+                    // chrome://flags#enable-webrtc-remote-event-log を有効にすると play() できるようになる
+                    console.warn('Failed To Play Remote Video', error);
+                }
+            }
+
+            document.getElementById('start-button').disabled = false;
+            document.getElementById('stop-button').disabled = true;
+            document.getElementById('start-button').style.display = 'inline';
+            document.getElementById('stop-button').style.display = 'none';
+        });
+
+    </script>
+</head>
+
+<body>
+
+    <header>
+        <span>Local</span>
+        <button type="button" id="start-button">Start</button>
+        <button type="button" id="stop-button" style="display: none;" disabled>Stop</button>
+        <span>Remote</span>
+    </header>
+    <main>
+        <video id="local-video" playsinline muted autoplay></video>
+        <video id="remote-video" playsinline muted autoplay></video>
+    </main>
+    <footer>
+        Author : <a href="https://neos21.net/">Neo</a> (<a
+            href="https://github.com/Neos21/webrtc-video-chat">GitHub</a>)
+    </footer>
+
+</body>
+
+</html>
