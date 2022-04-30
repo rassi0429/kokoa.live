@@ -9,7 +9,46 @@
 </head>
 
 <body>
-    <h1>hogehoge</h1>
+    <h1>kokoa.live</h1>
+
+    <input type="text" id="rtmp" value="test" />
+    <button onclick="setRTMP()">set url</button>
+
+    <button onclick="getDisplay()">start</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const rtmp = document.getElementById("rtmp")
+
+        const socket = io.connect("/",{ secure: true, reconnection: true, reconnectionDelay: 1000, timeout: 15000, pingTimeout: 15000, pingInterval: 45000, query: { framespersecond: 60, audioBitrate: 44100 } })
+
+        let mediaRecorder
+
+
+        function setRTMP() {
+            socket.emit("setRtmp", "rtmp://localhost/live/" + rtmp.value)
+        }
+        function getDisplay() {
+            const mediaStreamConstraints = { video: true };
+            navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints).then(stream => {
+                socket.emit('start', 'start');
+                mediaRecorder = new MediaRecorder(stream)
+                mediaRecorder.start(250);
+                mediaRecorder.ondataavailable = function (e) {
+                    console.log(e.data);
+                    socket.emit("stream", e.data);
+                }
+            })
+        }
+
+        socket.on('message', (message) => {
+            console.log(message);
+        });
+        socket.on('fatal', (message) => {
+            console.log(message);
+        });
+        // socket.emit("setRtmp","rtmp://live.kokoa.dev/live/test")
+    </script>
 </body>
 
 </html>
