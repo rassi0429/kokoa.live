@@ -11,8 +11,7 @@
 <body>
     <h1>kokoa.live</h1>
 
-    <input type="text" id="rtmp" value="test" />
-    <button onclick="setRTMP()">set url</button>
+    <input type="text" id="rtmp" value="" placeholder="unique id here" />
 
     <button onclick="getDisplay()">start</button>
 
@@ -26,9 +25,9 @@
 
 
         function setRTMP() {
-            socket.emit("setRtmp", "rtmp://localhost/live/" + rtmp.value)
         }
         function getDisplay() {
+            socket.emit("setRtmp", "rtmp://localhost/live/" + rtmp.value)
             const mediaStreamConstraints = { video: true };
             navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints).then(stream => {
                 socket.emit('start', 'start');
