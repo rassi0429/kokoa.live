@@ -8,7 +8,7 @@ const hs = httpServer.createServer(app)
 import {Server} from "socket.io"
 import {spawn} from "child_process";
 
-const io = new Server(hs)
+const io = new Server(hs,{maxHttpBufferSize: 1e10})
 
 spawn('ffmpeg', ['-h']).on('error', function (m) {
     console.error("FFMpeg not found in system cli; please install ffmpeg properly or make a softlink to ./!");
