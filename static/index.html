@@ -110,7 +110,7 @@
             pingInterval: 45000,
             query: {framespersecond: fps, audioBitrate: 44100}
         })
-        socket.emit("setRtmp", "rtmp://live.kokoa.dev/live/" + rtmp.value)
+        socket.emit("setRtmp", "rtmp://localhost/live/" + rtmp.value)
         const mediaStreamConstraints = {video: true, frameRate: {exact: fps}};
         stream = await navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints)
         document.getElementById("preview").srcObject = stream
