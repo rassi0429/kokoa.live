@@ -21,14 +21,14 @@
 </nav>
 <div class="container is-max-desktop">
     <div class="notification is-warning mt-2">
-        ・Chromeのタブが時々正常に配信されない問題があります<br>
-        ・オーディオはまだ配信されません
+        ・Sometimes Chrome tabs capture will not work.<br>
+        ・Audio not available now.
     </div>
     <div class="columns">
         <div class="column">
             <div class="card p-2">
                 <p class="title is-4">
-                    配信設定
+                    Stream Settings
                 </p>
                 <div class="">
                     <div class="field">
@@ -36,7 +36,7 @@
                         <div class="control">
                             <input class="input" type="text" id="rtmp" value="" placeholder="Unique Id">
                         </div>
-                        <p class="help">被らなければなんでもいいです</p>
+                        <p class="help">You need to set ID uniquely</p>
                     </div>
 
                     <div class="field">
@@ -46,18 +46,18 @@
                                    class="slider is-fullwidth is-info" step="1" min="10" max="30" value="15"
                                    type="range">
                         </div>
-                        <p class="help">fpsが高いと、結構パソコンの負荷が高いです</p>
+                        <p class="help">Higher fps will use a lot of CPU</p>
                     </div>
 
-                    <button class="button is-info" id="startBtn" onclick="getDisplay()">画面を選択して開始</button>
-                    <button class="button is-danger" id="stopBtn" disabled onclick="stopStream()" onclick="">停止</button>
+                    <button class="button is-info" id="startBtn" onclick="getDisplay()">START</button>
+                    <button class="button is-danger" id="stopBtn" disabled onclick="stopStream()" onclick="">STOP</button>
                 </div>
             </div>
         </div>
         <div class="column">
             <div class="card p-2">
                 <p class="title is-4">
-                    プレビュー <span id="status" class="subtitle"></span>
+                    Preview <span id="status" class="subtitle"></span>
                 </p>
 
                 <video autoplay playsinline muted="false" volume=0 id="preview"></video>

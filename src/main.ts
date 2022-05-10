@@ -1,10 +1,13 @@
 import express from "express"
+
 const app = express()
 
 import httpServer from "http"
+
 const hs = httpServer.createServer(app)
-import { Server } from "socket.io"
+import {Server} from "socket.io"
 import {spawn} from "child_process";
+
 const io = new Server(hs)
 
 spawn('ffmpeg', ['-h']).on('error', function (m) {
@@ -21,10 +24,10 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
     let rtmp = ""
     let codec = ""
-    let ffmpeg_process:any = false
-    let feedStream:any = false
+    let ffmpeg_process: any = false
+    let feedStream: any = false
 
-    socket.emit("message","Hi")
+    socket.emit("message", "Hi")
 
     socket.on("setRtmp", (data) => {
         if (typeof data != 'string') {
@@ -61,7 +64,7 @@ io.on("connection", (socket) => {
         }
         console.log(audioEncoding, audioBitrate);
         console.log('framerate on node side', framerate);
-        let ops:string[] = [];
+        let ops: string[] = [];
         if (framerate == 1) {
             ops = [
                 '-i', '-',
@@ -75,62 +78,67 @@ io.on("connection", (socket) => {
                 '-f', 'flv', rtmp
             ];
 
-        } else if (framerate == 15) {
+        } else {
             ops = [
                 '-i', '-',
                 '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
                 '-max_muxing_queue_size', '1000',
                 '-bufsize', '5000',
-                '-r', '15', '-g', '30', '-keyint_min', '30',
+                '-r', framerate.toString(), '-g', '30', '-keyint_min', '30',
                 '-x264opts', 'keyint=30', '-crf', '25', '-pix_fmt', 'yuv420p',
                 '-profile:v', 'baseline', '-level', '3',
                 '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
                 '-f', 'flv', rtmp
             ];
-
-        } else {
-            ops = [
-                '-i', '-',
-                //'-c', 'copy',
-                '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',  // video codec config: low latency, adaptive bitrate
-                '-c:a', 'aac', '-ar', audioBitrate + "", '-b:a', audioEncoding, // audio codec config: sampling frequency (11025, 22050, 44100), bitrate 64 kbits
-                //'-max_muxing_queue_size', '4000',
-                //'-y', //force to overwrite
-                //'-use_wallclock_as_timestamps', '1', // used for audio sync
-                //'-async', '1', // used for audio sync
-                //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
-                //'-strict', 'experimental',
-                '-bufsize', '5000',
-
-                '-f', 'flv', rtmp
-                /*. original params
-                '-i','-',
-                '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',  // video codec config: low latency, adaptive bitrate
-                '-c:a', 'aac', '-ar', '44100', '-b:a', '64k', // audio codec config: sampling frequency (11025, 22050, 44100), bitrate 64 kbits
-                '-y', //force to overwrite
-                '-use_wallclock_as_timestamps', '1', // used for audio sync
-                '-async', '1', // used for audio sync
-                //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
-                //'-strict', 'experimental',
-                '-bufsize', '1000',
-                '-f', 'flv', socket._rtmpDestination
-                */
-
-            ];
+        //
+        // } else {
+        //     ops = [
+        //         '-i', '-',
+        //         //'-c', 'copy',
+        //         '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',  // video codec config: low latency, adaptive bitrate
+        //         '-c:a', 'aac', '-ar', audioBitrate + "", '-b:a', audioEncoding, // audio codec config: sampling frequency (11025, 22050, 44100), bitrate 64 kbits
+        //         "-r", framerate.toString(),
+        //         //'-max_muxing_queue_size', '4000',
+        //         //'-y', //force to overwrite
+        //         //'-use_wallclock_as_timestamps', '1', // used for audio sync
+        //         //'-async', '1', // used for audio sync
+        //         //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
+        //         //'-strict', 'experimental',
+        //         '-bufsize', '5000',
+        //
+        //         '-f', 'flv', rtmp
+        //         /*. original params
+        //         '-i','-',
+        //         '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency',  // video codec config: low latency, adaptive bitrate
+        //         '-c:a', 'aac', '-ar', '44100', '-b:a', '64k', // audio codec config: sampling frequency (11025, 22050, 44100), bitrate 64 kbits
+        //         '-y', //force to overwrite
+        //         '-use_wallclock_as_timestamps', '1', // used for audio sync
+        //         '-async', '1', // used for audio sync
+        //         //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
+        //         //'-strict', 'experimental',
+        //         '-bufsize', '1000',
+        //         '-f', 'flv', socket._rtmpDestination
+        //         */
+        //
+        //     ];
         }
         console.log("ops", ops);
         console.log(rtmp);
         ffmpeg_process = spawn('ffmpeg', ops);
         console.log("ffmpeg spawned");
-        feedStream = function (w : any) {
+        feedStream = function (w: any) {
             ffmpeg_process.stdin.write(w);
             //write exception cannot be caught here.
         }
 
-        ffmpeg_process.stderr.on('data', function (d : any) {
+        ffmpeg_process.stderr.on('data', function (d: any) {
+            console.log(d.toString())
             socket.emit('ffmpeg_stderr', '' + d);
         });
-        ffmpeg_process.on('error', function (e : any) {
+        ffmpeg_process.stdout.on('data', function (d: any) {
+            console.log(d.toString())
+        });
+        ffmpeg_process.on('error', function (e: any) {
             console.log('child process error' + e);
             socket.emit('fatal', 'ffmpeg error!' + e);
             feedStream = false;
@@ -143,13 +151,15 @@ io.on("connection", (socket) => {
         });
     })
     socket.on("stream", (data) => {
-        if (!feedStream) {
-            socket.emit('fatal', 'rtmp not set yet.');
-            ffmpeg_process.stdin.end();
-            ffmpeg_process.kill('SIGINT');
-            return;
-        }
-        feedStream(data);
+        try {
+            if (!feedStream) {
+                socket.emit('fatal', 'rtmp not set yet.');
+                ffmpeg_process.stdin.end();
+                ffmpeg_process.kill('SIGINT');
+                return;
+            }
+            feedStream(data);
+        } catch {}
     })
     socket.on("disconnect", (data) => {
         console.log("socket disconnected!");
@@ -159,7 +169,9 @@ io.on("connection", (socket) => {
                 ffmpeg_process.stdin.end();
                 ffmpeg_process.kill('SIGINT');
                 console.log("ffmpeg process ended!");
-            } catch (e) { console.warn('killing ffmoeg process attempt failed...'); }
+            } catch (e) {
+                console.warn('killing ffmoeg process attempt failed...');
+            }
     })
 
 
@@ -174,4 +186,6 @@ io.on("connection", (socket) => {
 })
 
 
-hs.listen(3000,() => {console.log("OK")})
+hs.listen(3000, () => {
+    console.log("OK")
+})
