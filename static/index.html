@@ -68,6 +68,12 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+
+    const rtmp_address = localStorage.getItem('rtmp');
+    if(rtmp_address) {
+        document.getElementById("rtmp").value = rtmp_address
+    }
+
     let fps = 15
 
     function changefps(value) {
@@ -125,6 +131,7 @@
         document.getElementById("stopBtn").disabled = false
         document.getElementById("status").innerText = "🔴配信中"
         document.title = "🔴配信中 - kokoa.live"
+        localStorage.setItem('rtmp', rtmp.value);
     }
 
     socket.on('message', (message) => {
