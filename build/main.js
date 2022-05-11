@@ -9,7 +9,7 @@ const http_1 = __importDefault(require("http"));
 const hs = http_1.default.createServer(app);
 const socket_io_1 = require("socket.io");
 const child_process_1 = require("child_process");
-const io = new socket_io_1.Server(hs);
+const io = new socket_io_1.Server(hs, { maxHttpBufferSize: 1e10 });
 (0, child_process_1.spawn)('ffmpeg', ['-h']).on('error', function (m) {
     console.error("FFMpeg not found in system cli; please install ffmpeg properly or make a softlink to ./!");
     process.exit(-1);

@@ -68,9 +68,11 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-
+    const searchParams = new URLSearchParams(window.location.search).get("id")
     const rtmp_address = localStorage.getItem('rtmp');
-    if(rtmp_address) {
+    if(searchParams) {
+        document.getElementById("rtmp").value = searchParams
+    } else if(rtmp_address) {
         document.getElementById("rtmp").value = rtmp_address
     }
 
