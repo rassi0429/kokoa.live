@@ -29,11 +29,11 @@ io.on("connection", (socket) => {
             socket.emit('message', 'rtmp destination setup error.');
             return;
         }
-        var regexValidator = /^rtmp:\/\/[^\s]*$/; //TODO: should read config
-        if (!regexValidator.test(data)) {
-            socket.emit('message', 'rtmp address rejected.');
-            return;
-        }
+        // var regexValidator = /^rtmp:\/\/[^\s]*$/;//TODO: should read config
+        // if (!regexValidator.test(data)) {
+        //     socket.emit('message', 'rtmp address rejected.');
+        //     return;
+        // }
         rtmp = data;
         socket.emit('message', 'rtmp destination set to:' + data);
     });
@@ -71,7 +71,7 @@ io.on("connection", (socket) => {
                 '-x264opts', 'keyint=2', '-crf', '25', '-pix_fmt', 'yuv420p',
                 '-profile:v', 'baseline', '-level', '3',
                 '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
-                '-f', 'flv', rtmp
+                '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
             ];
         }
         else {
@@ -84,7 +84,7 @@ io.on("connection", (socket) => {
                 '-x264opts', 'keyint=30', '-crf', '25', '-pix_fmt', 'yuv420p',
                 '-profile:v', 'baseline', '-level', '3',
                 '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
-                '-f', 'flv', rtmp
+                '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
             ];
             //
             // } else {
@@ -155,7 +155,8 @@ io.on("connection", (socket) => {
             }
             feedStream(data);
         }
-        catch { }
+        catch {
+        }
     });
     socket.on("disconnect", (data) => {
         console.log("socket disconnected!");

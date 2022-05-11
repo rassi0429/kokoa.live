@@ -15,7 +15,7 @@
 <body style="height: 100vh">
 <nav class="navbar is-link" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
-        <a class="navbar-item" href="https://v1.kokoa.dev">
+        <a class="navbar-item" href="https://v1.kokoa.live">
             <img src="/icon-white.png" width="112" height="36">
         </a>
     </div>
@@ -71,9 +71,9 @@
 <script>
     const searchParams = new URLSearchParams(window.location.search).get("id")
     const rtmp_address = localStorage.getItem('rtmp');
-    if(searchParams) {
+    if (searchParams) {
         document.getElementById("rtmp").value = searchParams
-    } else if(rtmp_address) {
+    } else if (rtmp_address) {
         document.getElementById("rtmp").value = rtmp_address
     }
 
@@ -106,7 +106,7 @@
     }
 
     async function getDisplay() {
-        if(!rtmp.value) {
+        if (!rtmp.value) {
             alert("StreamIDを指定してください！")
             return
         }
@@ -125,8 +125,8 @@
         socket.on('fatal', (message) => {
             console.log(message);
         });
-        socket.emit("setRtmp", "rtmp://localhost/live/" + rtmp.value)
-        const mediaStreamConstraints = {video: true, frameRate: {max: fps}};
+        socket.emit("setRtmp", rtmp.value)
+        const mediaStreamConstraints = {video: true, frameRate: {min: 10, max: fps}, audio: true};
         stream = await navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints)
         document.getElementById("preview").srcObject = stream
         socket.emit('start', 'start');
