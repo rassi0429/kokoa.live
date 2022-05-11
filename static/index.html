@@ -118,8 +118,14 @@
             pingInterval: 45000,
             query: {framespersecond: fps, audioBitrate: 44100}
         })
+        socket.on('message', (message) => {
+            console.log(message);
+        });
+        socket.on('fatal', (message) => {
+            console.log(message);
+        });
         socket.emit("setRtmp", "rtmp://localhost/live/" + rtmp.value)
-        const mediaStreamConstraints = {video: true, frameRate: {exact: fps}};
+        const mediaStreamConstraints = {video: true, frameRate: {max: fps}};
         stream = await navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints)
         document.getElementById("preview").srcObject = stream
         socket.emit('start', 'start');
@@ -136,12 +142,6 @@
         localStorage.setItem('rtmp', rtmp.value);
     }
 
-    socket.on('message', (message) => {
-        console.log(message);
-    });
-    socket.on('fatal', (message) => {
-        console.log(message);
-    });
     // socket.emit("setRtmp","rtmp://live.kokoa.dev/live/test")
 </script>
 </body>
