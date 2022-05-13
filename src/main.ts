@@ -177,7 +177,6 @@ io.on("connection", (socket) => {
 
 
     socket.on('error', function (e) {
-
         console.log('socket.io error:' + e);
     });
 
@@ -190,3 +189,5 @@ io.on("connection", (socket) => {
 hs.listen(3000, () => {
     console.log("OK")
 })
+
+process.on("uncaughtException", console.error);
