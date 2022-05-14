@@ -5,10 +5,10 @@ const app = express()
 import httpServer from "http"
 
 const hs = httpServer.createServer(app)
-import {Server} from "socket.io"
-import {spawn} from "child_process";
+import { Server } from "socket.io"
+import { spawn } from "child_process";
 
-const io = new Server(hs, {maxHttpBufferSize: 1e10})
+const io = new Server(hs, { maxHttpBufferSize: 1e10 })
 
 spawn('ffmpeg', ['-h']).on('error', function (m) {
     console.error("FFMpeg not found in system cli; please install ffmpeg properly or make a softlink to ./!");
@@ -66,30 +66,75 @@ io.on("connection", (socket) => {
         console.log('framerate on node side', framerate);
         let ops: string[] = [];
         if (framerate == 1) {
-            ops = [
-                '-i', '-',
-                '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
-                //'-max_muxing_queue_size', '1000',
-                //'-bufsize', '5000',
-                '-r', '1', '-g', '2', '-keyint_min', '2',
-                '-x264opts', 'keyint=2', '-crf', '25', '-pix_fmt', 'yuv420p',
-                '-profile:v', 'baseline', '-level', '3',
-                '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
-                '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
+            ops=[
+                '-i','-', // Read from STDIN -- corresponding to we're passing raw binary video stream from socket.io to FFMPEG via STDIN pipe
+                // '-re', // Read input at native frame rate. Mainly used to simulate a grab device. (Reset output frame rate back to normal)
+                // Note: you can also set frame rate explicitly by -r 24 or -r 30
+                '-r', framerate.toString(),
+                '-fflags', '+igndts', // https://ffmpeg.org/ffmpeg-formats.html
+                '-vcodec', 'copy',
+                '-acodec', 'copy', // Re-use the codec from browser.
+                // Note: you can also choose to re-encode the video here, e,g,:
+                // '-vcodec', 'libx264',
+                // '-acodec, 'libvorbis', 
+                '-preset','ultrafast', // Choosing encoding compression profle. Choose 'slow' to make output stream smaller, at the cost of higher CPU utilization.
+                // Available options: ultrafast; superfast; veryfast; faster; fast; medium – default preset; slow; slower; veryslow;
+                '-crf' ,'22', // Choosing encoding quality (higher bitrate or lower bitrate)
+                // You can also use QP value to adjust output stream quality, e.g.: 
+                // '-qp', '0',
+                // You can also specify output target bitrate directly, e.g.:
+                //'-b:v','1500K',
+                '-b:a','128K', // Audio bitrate
+                
+                '-f', 'rtsp', rtmp   // Send output stream to this RTMP address
             ];
+            
+            // ops = [
+            //     '-i', '-',
+            //     '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+            //     //'-max_muxing_queue_size', '1000',
+            //     //'-bufsize', '5000',
+            //     '-r', '1', '-g', '2', '-keyint_min', '2',
+            //     '-x264opts', 'keyint=2', '-crf', '25', '-pix_fmt', 'yuv420p',
+            //     '-profile:v', 'baseline', '-level', '3',
+            //     '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
+            //     '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
+            // ];
 
         } else {
-            ops = [
-                '-i', '-',
-                '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
-                '-max_muxing_queue_size', '1000',
-                '-bufsize', '5000',
-                '-r', framerate.toString(), '-g', '30', '-keyint_min', '30',
-                '-x264opts', 'keyint=30', '-crf', '25', '-pix_fmt', 'yuv420p',
-                '-profile:v', 'baseline', '-level', '3',
-                '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
-                '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
+            ops=[
+                '-i','-', // Read from STDIN -- corresponding to we're passing raw binary video stream from socket.io to FFMPEG via STDIN pipe
+                //'-re', // Read input at native frame rate. Mainly used to simulate a grab device. (Reset output frame rate back to normal)
+                '-r', framerate.toString(),
+                // Note: you can also set frame rate explicitly by -r 24 or -r 30
+                '-fflags', '+igndts', // https://ffmpeg.org/ffmpeg-formats.html
+                '-vcodec', 'copy',
+                '-acodec', 'copy', // Re-use the codec from browser.
+                // Note: you can also choose to re-encode the video here, e,g,:
+                // '-vcodec', 'libx264',
+                // '-acodec, 'libvorbis', 
+                '-preset','ultrafast', // Choosing encoding compression profle. Choose 'slow' to make output stream smaller, at the cost of higher CPU utilization.
+                // Available options: ultrafast; superfast; veryfast; faster; fast; medium – default preset; slow; slower; veryslow;
+                '-crf' ,'22', // Choosing encoding quality (higher bitrate or lower bitrate)
+                // You can also use QP value to adjust output stream quality, e.g.: 
+                // '-qp', '0',
+                // You can also specify output target bitrate directly, e.g.:
+                //'-b:v','1500K',
+                '-b:a','128K', // Audio bitrate
+                
+                '-f', 'rtsp', rtmp   // Send output stream to this RTMP address
             ];
+            // ops = [
+            //     '-i', '-',
+            //     '-c:v', "copy", // 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency',
+            //     '-max_muxing_queue_size', '1000',
+            //     '-bufsize', '5000',
+            //     '-r', framerate.toString(), '-g', '30', '-keyint_min', '30',
+            //     '-x264opts', 'keyint=30', '-crf', '25', '-pix_fmt', 'yuv420p',
+            //     '-profile:v', 'baseline', '-level', '3',
+            //     '-c:a', 'aac', '-b:a', audioEncoding, '-ar', audioBitrate + "",
+            //     '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
+            // ];
             //
             // } else {
             //     ops = [
