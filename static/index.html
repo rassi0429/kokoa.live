@@ -126,7 +126,14 @@
             console.log(message);
         });
         socket.emit("setRtmp", rtmp.value)
-        const mediaStreamConstraints = {video: true, frameRate: {min: 10, max: fps}, audio: true};
+        const mediaStreamConstraints = {
+            video: true, frameRate: {min: 10, max: fps}, audio: {
+                audioGainControl: false,
+                echoCancellation: false,
+                googAutoGainControl: false,
+                noiseSuppression: false
+            }
+        };
         stream = await navigator.mediaDevices.getDisplayMedia(mediaStreamConstraints)
         document.getElementById("preview").srcObject = stream
         socket.emit('start', 'start');

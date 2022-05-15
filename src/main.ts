@@ -54,15 +54,15 @@ io.on("connection", (socket) => {
 
         const framerate = Number(socket.handshake.query.framespersecond);
         const audioBitrate = parseInt(socket.handshake.query.audioBitrate + "");
-        let audioEncoding = "64k";
-        if (audioBitrate == 11025) {
-            audioEncoding = "11k";
-        } else if (audioBitrate == 22050) {
-            audioEncoding = "22k";
-        } else if (audioBitrate == 44100) {
-            audioEncoding = "44k";
-        }
-        console.log(audioEncoding, audioBitrate);
+        // let audioEncoding = "64k";
+        // if (audioBitrate == 11025) {
+        //     audioEncoding = "11k";
+        // } else if (audioBitrate == 22050) {
+        //     audioEncoding = "22k";
+        // } else if (audioBitrate == 44100) {
+        //     audioEncoding = "44k";
+        // }
+        // console.log(audioEncoding, audioBitrate);
         console.log('framerate on node side', framerate);
         let ops: string[] = [];
         if (framerate == 1) {
