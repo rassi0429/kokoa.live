@@ -86,7 +86,7 @@ io.on("connection", (socket) => {
                 //'-b:v','1500K',
                 '-b:a','128K', // Audio bitrate
                 
-                '-f', 'rtsp', rtmp   // Send output stream to this RTMP address
+                '-f', 'rtsp','-rtsp_transport', 'tcp', rtmp   // Send output stream to this RTMP address
             ];
             
             // ops = [
@@ -122,7 +122,7 @@ io.on("connection", (socket) => {
                 //'-b:v','1500K',
                 '-b:a','128K', // Audio bitrate
                 
-                '-f', 'rtsp', rtmp   // Send output stream to this RTMP address
+                '-f', 'rtsp','-rtsp_transport', 'tcp', rtmp   // Send output stream to this RTMP address
             ];
             // ops = [
             //     '-i', '-',
