@@ -39,7 +39,7 @@ io.on("connection", (socket) => {
         //     socket.emit('message', 'rtmp address rejected.');
         //     return;
         // }
-        rtmp = "rtmp://localhost/live/" + data;
+        rtmp = "rtsp://localhost:8554/live/" + data;
         socket.emit('message', 'rtmp destination set to:' + data);
     })
     socket.on("start", (data) => {
@@ -85,8 +85,8 @@ io.on("connection", (socket) => {
                 // You can also specify output target bitrate directly, e.g.:
                 //'-b:v','1500K',
                 '-b:a','128K', // Audio bitrate
-                
-                '-f', 'flv', rtmp   // Send output stream to this RTMP address
+                '-f', 'rtsp', '-rtsp_transport', 'tcp', rtmp
+                //'-f', 'flv', rtmp   // Send output stream to this RTMP address
             ];
             
             // ops = [
@@ -121,8 +121,8 @@ io.on("connection", (socket) => {
                 // You can also specify output target bitrate directly, e.g.:
                 //'-b:v','1500K',
                 '-b:a','128K', // Audio bitrate
-                '-f', 'flv', rtmp
-                //'-f', 'rtsp','-rtsp_transport', 'tcp', rtmp   // Send output stream to this RTMP address
+                //'-f', 'flv', rtmp
+                '-f', 'rtsp','-rtsp_transport', 'tcp', rtmp   // Send output stream to this RTMP address
             ];
             // ops = [
             //     '-i', '-',
