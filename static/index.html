@@ -51,7 +51,22 @@
                     </div>
 
                     <button class="button is-info" id="startBtn" onclick="getDisplay()">画面を選択して開始</button>
-                    <button class="button is-danger" id="stopBtn" disabled onclick="stopStream()" onclick="">停止</button>
+                    <button class="button is-danger" id="stopBtn" disabled onclick="stopStream()" onclick="">停止
+                    </button>
+                </div>
+            </div>
+            <div class="card mt-2">
+                <div class="card-content">
+                    <p class="title">
+                        使い方
+                    </p>
+                    <label class="label">以下のリンクをVRChatの動画プレイヤーに入力してください。</label>
+                    <div class="is-flex">
+                        <input class="input" type="text" id="vrcrtsp" value="配信を開始すると表示されます。" placeholder="Unique Id" readonly>
+                        <button class="button is-link is-light" id="vrcrtspbtn" disabled onclick="copyVRCLink()">
+                            コピー
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -103,6 +118,20 @@
         document.getElementById("stopBtn").disabled = true
         document.title = "kokoa.live"
         document.getElementById("status").innerText = ""
+        document.getElementById("vrcrtsp").value = "配信を開始すると表示されます。"
+        document.getElementById("vrcrtspbtn").disabled = true
+    }
+
+    function copyVRCLink() {
+        const copyText = document.getElementById("vrcrtsp");
+        // use clipboard API
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+        document.execCommand("copy");
+        document.getElementById("vrcrtspbtn").innerText = "コピーしました！"
+        setTimeout(() => {
+            document.getElementById("vrcrtspbtn").innerText = "コピー"
+        }, 1000)
     }
 
     async function getDisplay() {
@@ -148,6 +177,8 @@
         document.getElementById("status").innerText = "🔴配信中"
         document.title = "🔴配信中 - kokoa.live"
         localStorage.setItem('rtmp', rtmp.value);
+        document.getElementById("vrcrtsp").value = "rtspt://live.kokoa.dev:8554/live/" + rtmp.value
+        document.getElementById("vrcrtspbtn").disabled = false
     }
 
     // socket.emit("setRtmp","rtmp://live.kokoa.dev/live/test")
